@@ -112,7 +112,16 @@ public class JSONObject {
 	}
 	public JSONObject() { }
 	#region PARSE
-	public JSONObject(string str, bool strict = false) {	//create a new JSONObject from a string (this will also create any children, and parse the whole string)
+
+	public JSONObject(string str){
+		JSONObjectBuilder (str, false);
+	}
+
+	public JSONObject(string str, bool strict) {	//create a new JSONObject from a string (this will also create any children, and parse the whole string)
+		JSONObjectBuilder (str, strict);
+	}
+
+	private void JSONObjectBuilder(string str,bool strict){
 		if(str != null) {
 			str = str.Trim(WHITESPACE);
 			if(strict) {
@@ -299,61 +308,125 @@ public class JSONObject {
 	}
 	public delegate void FieldNotFound(string name);
 	public delegate void GetFieldResponse(JSONObject obj);
-	public void GetField(ref bool field, string name, FieldNotFound fail = null) {
-		if(type == JSONObject.Type.OBJECT) {
+	public bool GetField(ref bool field, string name, bool fallback) {
+		if (GetField(ref field, name)) { return true; }
+		field = fallback;
+		return false;
+	}
+
+	public bool GetField(ref bool field, string name) {
+		return GetField (ref field, name, null);
+	}
+	public bool GetField(ref bool field, string name, FieldNotFound fail) {
+		if(type == Type.OBJECT) {
 			int index = keys.IndexOf(name);
 			if(index >= 0) {
 				field = list[index].b;
-				return;
+				return true;
 			}
 		} 
 		if(fail != null) fail.Invoke(name);
+		return false;
 	}
 #if USEFLOAT
-	public void GetField(ref float field, string name, FieldNotFound fail = null) {
+	public bool GetField(ref float field, string name, float fallback) {
 #else
-	public void GetField(ref double field, string name, FieldNotFound fail = null) {
+	public bool GetField(ref double field, string name, double fallback) {
 #endif
-		if(type == JSONObject.Type.OBJECT) {
+		if (GetField(ref field, name)) { return true; }
+		field = fallback;
+		return false;
+	}
+#if USEFLOAT
+	public bool GetField(ref float field, string name) {
+		return GetField (ref field,name,null);
+	}
+	public bool GetField(ref float field, string name, FieldNotFound fail) {
+#else
+	public bool GetField(ref double field, string name) {
+		return GetField (field,name,null);
+	}
+
+	public bool GetField(ref double field, string name, FieldNotFound fail) {
+#endif
+		if(type == Type.OBJECT) {
 			int index = keys.IndexOf(name);
 			if(index >= 0){
 				field = list[index].n;
-				return;
+				return true;
 			}
 		}
 		if(fail != null) fail.Invoke(name);
+		return false;
 	}
-	public void GetField(ref int field, string name, FieldNotFound fail = null) {
+	public bool GetField(ref int field, string name, int fallback) {
+		if (GetField(ref field, name)) { return true; }
+		field = fallback;
+		return false;
+	}
+	public bool GetField(ref int field, string name) {
+		return GetField (ref field, name, null);
+	}
+
+	public bool GetField(ref int field, string name, FieldNotFound fail) {
 		if(type == JSONObject.Type.OBJECT) {
 			int index = keys.IndexOf(name);
 			if(index >= 0) {
 				field = (int)list[index].n;
-				return;
+				return true;
 			}
 		}
 		if(fail != null) fail.Invoke(name);
+		return false;
 	}
-	public void GetField(ref uint field, string name, FieldNotFound fail = null) {
+	public bool GetField(ref uint field, string name, uint fallback) {
+		if (GetField(ref field, name)) { return true; }
+		field = fallback;
+		return false;
+	}
+	
+	public bool GetField(ref uint field, string name) {
+		return GetField (ref field, name, null);
+	}
+
+	public bool GetField(ref uint field, string name, FieldNotFound fail) {
 		if(type == JSONObject.Type.OBJECT) {
 			int index = keys.IndexOf(name);
 			if(index >= 0) {
 				field = (uint)list[index].n;
-				return;
+				return true;
 			}
 		}
 		if(fail != null) fail.Invoke(name);
+		return false;
 	}
-	public void GetField(ref string field, string name, FieldNotFound fail = null) {
+	public bool GetField(ref string field, string name, string fallback) {
+		if (GetField(ref field, name)) { return true; }
+		field = fallback;
+		return false;
+	}
+
+	public bool GetField(ref string field, string name) {
+		JSONObject.FieldNotFound fieldNotFound = null;
+		return GetField (ref field, name, fieldNotFound);
+	}
+	public bool GetField(ref string field, string name, FieldNotFound fail) {
 		if(type == JSONObject.Type.OBJECT) {
 			int index = keys.IndexOf(name);
 			if(index >= 0) {
 				field = list[index].str;
-				return;
+				return true;
 			}
 		}
 		if(fail != null) fail.Invoke(name);
+		return false;
 	}
-	public void GetField(string name, GetFieldResponse response, FieldNotFound fail = null) {
+
+	public void GetField(string name, GetFieldResponse response) {
+		GetField (name, response, null);
+	}
+
+	public void GetField(string name, GetFieldResponse response, FieldNotFound fail) {
 		if(response != null && type == Type.OBJECT) {
 			int index = keys.IndexOf(name);
 			if(index >= 0) {
@@ -441,11 +514,19 @@ public class JSONObject {
 			}
 		}
 	}
-	public string print(bool pretty = false) {
+
+	public string print() {
+		return print (false);
+	}
+	public string print(bool pretty) {
 		return print(0, pretty);
 	}
 	#region STRINGIFY
-	public string print(int depth, bool pretty = false) {	//Convert the JSONObject into a string
+	public string print(int depth) {	//Convert the JSONObject into a string
+		return print (depth, false);
+	}
+
+	public string print(int depth, bool pretty) {	//Convert the JSONObject into a string
 		if(depth++ > MAX_DEPTH) {
 			Debug.Log("reached max depth!");
 			return "";
